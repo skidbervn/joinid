@@ -1,56 +1,42 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local player = game.Players.LocalPlayer
-local gui = Instance.new("ScreenGui", player.PlayerGui)
-local frame = Instance.new("Frame", gui)
-local inputBox = Instance.new("TextBox", frame)
-local joinButton = Instance.new("TextButton", frame)
-local closeButton = Instance.new("TextButton", frame)
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Camera = game:GetService("Workspace").CurrentCamera
 
-frame.Size = UDim2.new(0, 300, 0, 200)
-frame.Position = UDim2.new(0.5, -150, 0.5, -100)
-frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-frame.Active = true
-frame.Draggable = true  -- Cho phép kéo GUI
+-- Tạo một GUI chứa thông tin ESP
+local function createESP(player)
+    -- Tạo phần tử GUI cho tên người chơi
+    local espLabel = Instance.new("TextLabel")
+    espLabel.Parent = game.Players.LocalPlayer.PlayerGui:WaitForChild("ScreenGui")
+    espLabel.Size = UDim2.new(0, 100, 0, 50)
+    espLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+    espLabel.BackgroundTransparency = 1
+    espLabel.TextSize = 18
+    espLabel.Text = player.Name
 
-inputBox.Size = UDim2.new(0, 200, 0, 50)
-inputBox.Position = UDim2.new(0.5, -100, 0.2, 0)
-inputBox.PlaceholderText = "Enter Join ID"
-inputBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    -- Cập nhật vị trí của label dựa trên vị trí người chơi trong thế giới
+    local function updateESP()
+        local character = player.Character
+        if character and character:FindFirstChild("Head") then
+            local headPosition = character.Head.Position
+            local screenPosition, onScreen = Camera:WorldToViewportPoint(headPosition)
 
-joinButton.Size = UDim2.new(0, 200, 0, 50)
-joinButton.Position = UDim2.new(0.5, -100, 0.7, 0)
-joinButton.Text = "Join Server"
-joinButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-
--- Tạo nút đóng (X)
-closeButton.Size = UDim2.new(0, 50, 0, 50)
-closeButton.Position = UDim2.new(1, -50, 0, 0)
-closeButton.Text = "X"
-closeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-
--- Sự kiện khi bấm nút join
-joinButton.MouseButton1Click:Connect(function()
-    local joinID = inputBox.Text
-
-    -- Kiểm tra nếu Join ID có hợp lệ hay không
-    if joinID ~= "" then
-        -- Gửi yêu cầu teleport đến server với Join ID đã nhập
-        local success, err = pcall(function()
-            ReplicatedStorage.__ServerBrowser:InvokeServer("teleport", joinID)
-        end)
-
-        -- Kiểm tra kết quả thành công hay thất bại
-        if success then
-            print("Đã tham gia vào server với ID: " .. joinID)
-        else
-            warn("Không thể tham gia server: " .. err)
+            if onScreen then
+                espLabel.Position = UDim2.new(0, screenPosition.X, 0, screenPosition.Y)
+                espLabel.Visible = true
+            else
+                espLabel.Visible = false
+            end
         end
-    else
-        warn("Vui lòng nhập Join ID hợp lệ!")
     end
-end)
 
--- Sự kiện khi bấm nút đóng (X)
-closeButton.MouseButton1Click:Connect(function()
-    gui:Destroy()  -- Xóa GUI khi bấm nút X
+    -- Cập nhật liên tục
+    RunService.RenderStepped:Connect(updateESP)
+end
+
+-- Gọi hàm createESP cho mỗi người chơi
+Players.PlayerAdded:Connect(function(player)
+    -- Kiểm tra nếu người chơi có nhân vật
+    player.CharacterAdded:Connect(function(character)
+        createESP(player)
+    end)
 end)
