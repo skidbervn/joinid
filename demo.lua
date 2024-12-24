@@ -1,4 +1,4 @@
--- Script gửi tin nhắn và ngắt kết nối người chơi
+-- Lắng nghe khi một người chơi mới vào game
 game.Players.PlayerAdded:Connect(function(player)
     -- Gửi tin nhắn "hi" khi người chơi tham gia
     player:Chat("hi")
